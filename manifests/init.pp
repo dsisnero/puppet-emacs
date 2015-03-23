@@ -1,32 +1,27 @@
-# Public: Install Emacs.app from homebrew into /Applications.
+# Install Emacs.app from homebrew into /Applications
 #
 # Examples
+# include emacs
 #
-#   include emacs
+# emacs::package_ensure: "24.4"
 
 class emacs(
-  $install_options = [
-    '--cocoa',
-  ],
-) {
-  require homebrew
+  $package_ensure = $::emacs::params::package_ensure,
+  $install_options = $::emacs::params::install_options,
+  $install_path = $::emacs::params::install_path,
+  $link_path = $::emacs::params::link_path,
+)
+inherits emacs::params {
 
-  $version = '24.3-boxen4'
+  include ::emacs::install
+  include ::emacs::config
+  
+  anchor { 'emacs::start': }
+  anchor { 'emacs::end': }
 
-  homebrew::formula { 'emacs':
-    before => Package['boxen/brews/emacs'] ;
+  Anchor['emacs::start'] ->
+  Class['emacs::install'] ->
+  Class['emacs::config'] ->
+  Anchor['emacs::end']
   }
-
-  package { 'boxen/brews/emacs':
-    ensure          => $version,
-    install_options => $install_options,
-  }
-
-  $target = "${homebrew::config::installdir}/Cellar/emacs/${version}/Emacs.app"
-
-  file { '/Applications/Emacs.app':
-    ensure  => link,
-    target  => $target,
-    require => Package['boxen/brews/emacs']
-  }
-}
+  
